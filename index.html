@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Autoevaluación · Sistema de Cuentas Contables</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&family=Fraunces:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f6f1e4;
+    --paper-line:#d9cdae;
+    --ink:#20302a;
+    --ink-soft:#4a5c53;
+    --ledger-green:#1c3d34;
+    --ledger-green-dark:#122820;
+    --gold:#b8862e;
+    --gold-light:#e3b95e;
+    --correct:#2f6b3f;
+    --correct-bg:#e3efe2;
+    --incorrect:#a13d2f;
+    --incorrect-bg:#f3e2de;
+    --shadow:0 10px 30px rgba(18,40,32,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    background:
+      repeating-linear-gradient(var(--paper-line) 0 1px, transparent 1px 34px),
+      var(--paper);
+    font-family:'Source Sans 3', sans-serif;
+    color:var(--ink);
+    -webkit-tap-highlight-color:transparent;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  body{
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    min-height:100vh;
+    padding:24px 14px 40px;
+  }
+  .app{ width:100%; max-width:640px; }
+  .letterhead{ text-align:center; margin-bottom:18px; }
+  .letterhead .brand{
+    display:inline-flex; align-items:center; gap:10px;
+    background:var(--ledger-green); color:var(--gold-light);
+    padding:10px 22px; border-radius:6px; box-shadow:var(--shadow);
+  }
+  .letterhead .brand .glyph{
+    font-family:'Playfair Display',serif; font-weight:800; font-size:1.4rem;
+    border:2px solid var(--gold-light); border-radius:50%;
+    width:34px;height:34px; display:flex;align-items:center;justify-content:center;
+  }
+  .letterhead h1{
+    font-family:'Playfair Display', serif; font-size:0.95rem;
+    letter-spacing:.14em; text-transform:uppercase; margin:0; font-weight:700;
+  }
+  .letterhead p{
+    margin:8px 0 0; font-family:'Fraunces', serif; font-style:italic;
+    color:var(--ink-soft); font-size:0.92rem;
+  }
+  .card{
+    background:#fffdf7; border:1px solid var(--paper-line); border-radius:12px;
+    box-shadow:var(--shadow); padding:26px 22px 22px; position:relative; overflow:hidden;
+  }
+  .card::before{
+    content:""; position:absolute; top:0;left:0;right:0; height:6px;
+    background:linear-gradient(90deg, var(--ledger-green), var(--gold), var(--ledger-green));
+  }
+  #intro .lede{ font-size:1rem; line-height:1.55; color:var(--ink-soft); margin:6px 0 20px; }
+  #intro ul{ list-style:none; padding:0;margin:0 0 22px; }
+  #intro li{ display:flex;gap:10px; padding:8px 0; border-bottom:1px dashed var(--paper-line); font-size:0.94rem; }
+  #intro li:last-child{border-bottom:none;}
+  #intro li .num{ font-family:'Playfair Display',serif; color:var(--gold); font-weight:700; min-width:26px; }
+  button.primary{
+    display:block; width:100%; padding:14px 18px; background:var(--ledger-green);
+    color:#fdf6e3; border:none; border-radius:8px; font-family:'Source Sans 3', sans-serif;
+    font-weight:700; font-size:1.02rem; letter-spacing:.02em; cursor:pointer;
+    transition:transform .08s ease, background .2s ease; box-shadow:0 4px 0 var(--ledger-green-dark);
+  }
+  button.primary:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--ledger-green-dark); }
+  .progress-wrap{ margin-bottom:16px; }
+  .progress-label{
+    display:flex; justify-content:space-between; font-family:'Fraunces', serif;
+    font-style:italic; font-size:0.85rem; color:var(--ink-soft); margin-bottom:6px;
+  }
+  .progress-track{ height:8px; background:var(--paper-line); border-radius:6px; overflow:hidden; }
+  .progress-fill{
+    height:100%; background:linear-gradient(90deg, var(--gold), var(--ledger-green));
+    border-radius:6px; transition:width .35s ease;
+  }
+  .tag{
+    display:inline-block; font-size:0.68rem; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; padding:4px 10px; border-radius:20px; margin-bottom:12px;
+  }
+  .tag.teoria{ background:#e3ecec; color:var(--ledger-green);}
+  .tag.practica{ background:#f1e3cf; color:var(--gold);}
+  .question{
+    font-family:'Playfair Display', serif; font-size:1.14rem; line-height:1.42;
+    margin:0 0 14px; color:var(--ink);
+  }
+  .op-box{
+    background:#fbf6e9; border:1px dashed var(--paper-line); border-radius:8px;
+    padding:12px 14px; font-family:'Fraunces', serif; font-style:italic;
+    font-size:0.92rem; color:var(--ink-soft); margin-bottom:16px; line-height:1.45;
+  }
+  .op-box b{ font-style:normal; color:var(--ledger-green-dark); }
+
+  /* T accounts */
+  .t-wrap{ display:flex; gap:12px; margin-bottom:18px; }
+  .t-account{ flex:1; min-width:0; }
+  .t-account .t-name{
+    text-align:center; font-family:'Playfair Display',serif; font-weight:700;
+    font-size:0.82rem; padding-bottom:7px; margin-bottom:0; color:var(--ledger-green-dark);
+    border-bottom:3px solid var(--ledger-green); white-space:normal; line-height:1.15; min-height:2.4em;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .t-sides{ display:flex; }
+  .t-debe, .t-haber{
+    flex:1; min-height:70px; padding:8px 4px; display:flex; flex-direction:column; align-items:center;
+  }
+  .t-debe{ border-right:2px solid var(--ledger-green); }
+  .t-side-label{
+    font-size:0.62rem; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--ink-soft); margin-bottom:8px; font-weight:700;
+  }
+  .t-amount{
+    font-family:'Source Sans 3',sans-serif; font-weight:700; font-size:0.9rem;
+    color:var(--gold); opacity:0; transform:translateY(4px);
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .t-amount.show{ opacity:1; transform:translateY(0); }
+  .t-amount.correcta{ color:var(--correct); }
+
+  .options{ display:flex; flex-direction:column; gap:10px; margin-bottom:6px; }
+  .option{
+    text-align:left; padding:12px 14px; border:1.5px solid var(--paper-line); border-radius:8px;
+    background:#fffef9; font-size:0.92rem; line-height:1.4; cursor:pointer; display:flex; gap:10px;
+    align-items:flex-start; transition:border-color .15s ease, background .15s ease;
+    font-family:'Source Sans 3', sans-serif; color:var(--ink);
+  }
+  .option .letter{ font-family:'Playfair Display', serif; font-weight:700; color:var(--gold); min-width:20px; }
+  .option:hover:not(.locked){ border-color:var(--gold); background:#fbf3e0; }
+  .option.correct{ border-color:var(--correct); background:var(--correct-bg); color:var(--correct); font-weight:700; }
+  .option.correct .letter{color:var(--correct);}
+  .option.incorrect{ border-color:var(--incorrect); background:var(--incorrect-bg); color:var(--incorrect); font-weight:700; }
+  .option.incorrect .letter{color:var(--incorrect);}
+  .option.dim{ opacity:0.5; }
+  .option.locked{ cursor:default; }
+
+  .feedback{
+    margin-top:16px; padding:14px 16px; border-radius:8px; font-size:0.9rem; line-height:1.5;
+    display:none; border-left:4px solid var(--ledger-green); background:#f0ede1;
+  }
+  .feedback.show{display:block;}
+  .feedback .fb-title{ font-weight:700; display:block; margin-bottom:4px; font-family:'Source Sans 3',sans-serif; }
+  .feedback.ok{border-left-color:var(--correct); background:var(--correct-bg);}
+  .feedback.ok .fb-title{color:var(--correct);}
+  .feedback.bad{border-left-color:var(--incorrect); background:var(--incorrect-bg);}
+  .feedback.bad .fb-title{color:var(--incorrect);}
+  #next-btn{ margin-top:18px; display:none; }
+
+  #result .score-big{
+    text-align:center; font-family:'Playfair Display', serif; font-size:3.2rem;
+    font-weight:800; color:var(--ledger-green); margin:6px 0 2px;
+  }
+  #result .score-sub{ text-align:center; color:var(--ink-soft); margin:0 0 18px; font-size:0.95rem; }
+  #result .stamp{
+    text-align:center; font-family:'Fraunces', serif; font-style:italic; font-size:1.05rem;
+    padding:16px; border:2px dashed var(--gold); border-radius:10px; color:var(--ledger-green-dark);
+    margin-bottom:20px; background:#fbf3de;
+  }
+  .breakdown{ display:flex; justify-content:space-around; text-align:center; margin-bottom:22px; gap:10px; }
+  .breakdown div{flex:1;}
+  .breakdown .n{ font-family:'Playfair Display', serif; font-size:1.6rem; font-weight:700; }
+  .breakdown .l{ font-size:0.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); }
+  .breakdown .correcta .n{color:var(--correct);}
+  .breakdown .incorrecta .n{color:var(--incorrect);}
+  .footer-note{
+    text-align:center; font-size:0.76rem; color:var(--ink-soft); margin-top:22px;
+    font-family:'Fraunces', serif; font-style:italic;
+  }
+  .hidden{display:none !important;}
+  @media (max-width:420px){
+    .question{font-size:1.02rem;}
+    .card{padding:20px 16px 18px;}
+    #result .score-big{font-size:2.6rem;}
+    .t-name{font-size:0.72rem;}
+    .t-amount{font-size:0.78rem;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="letterhead">
+    <div class="brand">
+      <span class="glyph">$</span>
+      <h1>Sistema de Cuentas Contables</h1>
+    </div>
+    <p>Autoevaluación · Debe / Haber / Saldos / Clasificación</p>
+  </div>
+
+  <div class="card" id="intro">
+    <p class="lede">Un cuestionario de 30 ítems: 20 preguntas de teoría sobre cuentas (Debe, Haber, saldos, clasificación patrimonial y de resultados) y 10 casos prácticos de las Actividades del apunte, donde vas a tener que identificar qué cuentas intervienen y si se debitan o se acreditan, con el esquema de cuenta en T.</p>
+    <ul>
+      <li><span class="num">1</span> Una pregunta por pantalla, con corrección inmediata y justificación.</li>
+      <li><span class="num">2</span> En los casos prácticos vas a ver la cuenta T de cada cuenta involucrada.</li>
+      <li><span class="num">3</span> Al final, tu puntaje total y un mensaje según tu desempeño.</li>
+    </ul>
+    <button class="primary" onclick="startQuiz()">Comenzar autoevaluación</button>
+  </div>
+
+  <div class="card hidden" id="quiz">
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span id="progress-text">Ítem 1 de 30</span>
+        <span id="score-text">Aciertos: 0</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:3.3%"></div></div>
+    </div>
+
+    <span class="tag" id="q-tag">Teoría</span>
+    <p class="question" id="q-text"></p>
+    <div class="op-box hidden" id="op-box"></div>
+    <div class="t-wrap hidden" id="t-wrap"></div>
+    <div class="options" id="q-options"></div>
+
+    <div class="feedback" id="feedback">
+      <span class="fb-title" id="fb-title"></span>
+      <span id="fb-text"></span>
+    </div>
+
+    <button class="primary" id="next-btn" onclick="nextQuestion()">Siguiente ítem →</button>
+  </div>
+
+  <div class="card hidden" id="result">
+    <div class="score-big" id="final-score">0/30</div>
+    <p class="score-sub">Puntaje final sobre 30 preguntas</p>
+    <div class="breakdown">
+      <div class="correcta"><div class="n" id="n-correct">0</div><div class="l">Correctas</div></div>
+      <div class="incorrecta"><div class="n" id="n-incorrect">0</div><div class="l">Incorrectas</div></div>
+    </div>
+    <div class="stamp" id="final-msg"></div>
+    <button class="primary" onclick="restartQuiz()">Volver a responder</button>
+  </div>
+
+  <p class="footer-note">Basado en el apunte de Sistema de Información Contable · Cuentas</p>
+</div>
+
+<script>
+const QUESTIONS = [
+  // ---------- TEORÍA (20) ----------
+  {
+    tipo:"teoria",
+    q:"Según el material, ¿qué es la contabilidad?",
+    o:[
+      "Un instrumento para controlar los cambios que se producen en el patrimonio y los resultados, para poder utilizar las cuentas",
+      "Un método exclusivo para calcular impuestos",
+      "Un sistema para llevar el inventario físico de mercaderías",
+      "Un registro de las ventas diarias solamente"
+    ],
+    c:0,
+    j:"La contabilidad es el instrumento que permite controlar los cambios del patrimonio y los resultados durante un período, para poder usar correctamente las cuentas."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Qué es una cuenta, según la definición del apunte?",
+    o:[
+      "Un documento legal que certifica una compra",
+      "Una técnica contable para registrar los cambios que se producen en el patrimonio como consecuencia de las operaciones comerciales",
+      "El total de dinero disponible en la caja de la empresa",
+      "Un tipo de balance general anual"
+    ],
+    c:1,
+    j:"Una cuenta es la técnica contable que permite registrar los cambios que las operaciones comerciales producen en el patrimonio."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Cómo se forma una cuenta, de acuerdo con el apunte?",
+    o:[
+      "Sumando todas las facturas del mes",
+      "Registrando únicamente los pagos en efectivo",
+      "Agrupando elementos más o menos homogéneos (parecidos) bajo una denominación o nombre",
+      "Clasificando las operaciones por fecha de vencimiento"
+    ],
+    c:2,
+    j:"Una cuenta se forma agrupando elementos homogéneos o parecidos bajo una misma denominación o nombre."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Cuáles son las partes de una cuenta?",
+    o:[
+      "Ingreso, egreso y saldo final",
+      "Activo, pasivo y patrimonio neto",
+      "Compras, ventas y gastos",
+      "Debe, Haber y nombre de la cuenta"
+    ],
+    c:3,
+    j:"Las partes de una cuenta son el Debe (lado izquierdo), el Haber (lado derecho) y el nombre o denominación de la cuenta."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Qué significa 'Debitar' una cuenta?",
+    o:[
+      "Acción de escribir del lado del Debe de una cuenta",
+      "Acción de escribir del lado del Haber de una cuenta",
+      "Cerrar definitivamente una cuenta",
+      "Anular un asiento contable"
+    ],
+    c:0,
+    j:"Debitar es la acción de escribir en el lado del Debe (izquierdo) de una cuenta."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Qué significa 'Acreditar' una cuenta?",
+    o:[
+      "Registrar un préstamo bancario",
+      "Sumar el total del activo",
+      "Acción de escribir del lado del Haber de una cuenta",
+      "Emitir un cheque a un proveedor"
+    ],
+    c:2,
+    j:"Acreditar es la acción de escribir en el lado del Haber (derecho) de una cuenta."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Qué es el saldo de una cuenta?",
+    o:[
+      "El total de operaciones registradas en el mes",
+      "El nombre que identifica a la cuenta",
+      "El importe fijo que siempre figura en el Debe",
+      "Lo que queda en la cuenta por la diferencia entre el total de débitos y el total de créditos"
+    ],
+    c:3,
+    j:"El saldo es lo que resulta de la diferencia entre el total de débitos y el total de créditos de la cuenta."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Cuándo una cuenta presenta saldo deudor?",
+    o:[
+      "Cuando los valores del Haber superan a los del Debe",
+      "Cuando los valores anotados en el Debe son superiores a los anotados en el Haber",
+      "Cuando el Debe y el Haber son exactamente iguales",
+      "Cuando la cuenta no registró ningún movimiento"
+    ],
+    c:1,
+    j:"El saldo deudor se da cuando los valores anotados en el Debe son mayores que los anotados en el Haber."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Cuándo una cuenta presenta saldo acreedor?",
+    o:[
+      "Cuando los valores anotados en el Haber son superiores a los anotados en el Debe",
+      "Cuando los valores del Debe superan a los del Haber",
+      "Cuando la cuenta pertenece exclusivamente al activo",
+      "Cuando se trata de una cuenta de gastos generales"
+    ],
+    c:0,
+    j:"El saldo acreedor ocurre cuando los valores anotados en el Haber son mayores que los del Debe."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Qué es el 'saldo cero' o cuenta 'saldada'?",
+    o:[
+      "Cuando la cuenta nunca registró un movimiento",
+      "Cuando el total de los débitos es igual al total de los créditos",
+      "Cuando la cuenta pertenece al pasivo",
+      "Cuando se cierra el ejercicio contable anual"
+    ],
+    c:1,
+    j:"Una cuenta está saldada o tiene saldo cero cuando el total de débitos coincide exactamente con el total de créditos."
+  },
+  {
+    tipo:"teoria",
+    q:"Según la clasificación del apunte, ¿en qué dos grandes grupos se dividen las cuentas?",
+    o:[
+      "Cuentas de caja y cuentas de banco",
+      "Cuentas de activo y cuentas de ingresos",
+      "Cuentas anuales y cuentas mensuales",
+      "Cuentas patrimoniales y cuentas de resultados"
+    ],
+    c:3,
+    j:"Las cuentas se clasifican en Patrimoniales (Activo y Pasivo) y de Resultados (Pérdidas, Patrimonio Neto y Ganancias)."
+  },
+  {
+    tipo:"teoria",
+    q:"Dentro de las cuentas patrimoniales, ¿qué dos subgrupos existen?",
+    o:[
+      "Ganancias y pérdidas",
+      "Activo y Pasivo",
+      "Capital y reservas",
+      "Ingresos y egresos"
+    ],
+    c:1,
+    j:"Las cuentas patrimoniales se dividen en Activo y Pasivo."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Cuáles son ejemplos de cuentas del Activo según el apunte?",
+    o:[
+      "Proveedores, acreedores varios, documentos a pagar",
+      "Ventas, intereses ganados, descuentos obtenidos",
+      "Gastos generales, intereses pagados, costo de venta",
+      "Caja, mercaderías, rodados, muebles y útiles, instalaciones, documentos a cobrar"
+    ],
+    c:3,
+    j:"El material lista como Activo: caja, mercaderías, rodados, muebles y útiles, instalaciones, documentos a cobrar, deudores varios, etc."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Cuáles son ejemplos de cuentas del Pasivo?",
+    o:[
+      "Caja y banco cuenta corriente",
+      "Mercaderías e inmuebles",
+      "Proveedores, acreedores varios, documentos a pagar",
+      "Capital y ganancias"
+    ],
+    c:2,
+    j:"El Pasivo incluye proveedores, acreedores varios, documentos a pagar, entre otras cuentas."
+  },
+  {
+    tipo:"teoria",
+    q:"Dentro de las cuentas de Resultados, ¿qué tres subgrupos se mencionan en el apunte?",
+    o:[
+      "Activo, Pasivo y Capital",
+      "Pérdidas, Patrimonio Neto y Ganancias",
+      "Ingresos, Egresos y Saldos",
+      "Ventas, Compras y Gastos"
+    ],
+    c:1,
+    j:"Las cuentas de Resultados se dividen en Pérdidas, Patrimonio Neto (capital) y Ganancias."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Cuáles son ejemplos de cuentas de Pérdidas?",
+    o:[
+      "Ventas, intereses ganados, descuentos obtenidos",
+      "Caja, banco, mercaderías",
+      "Gastos generales, intereses pagados o perdidos, descuentos otorgados, costo de venta",
+      "Capital y reservas"
+    ],
+    c:2,
+    j:"Las pérdidas incluyen gastos generales, intereses pagados o perdidos, descuentos otorgados y el costo de venta, entre otras."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Cuáles son ejemplos de cuentas de Ganancias?",
+    o:[
+      "Ventas, intereses ganados o cobrados, descuentos obtenidos",
+      "Gastos generales y alquileres pagados",
+      "Documentos a pagar y proveedores",
+      "Caja y mercaderías"
+    ],
+    c:0,
+    j:"Las ganancias incluyen ventas, intereses ganados o cobrados y descuentos obtenidos, entre otras."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Qué es la cuenta 'Caja' según el análisis de cuentas del apunte?",
+    o:[
+      "Una cuenta de pasivo con saldo acreedor",
+      "Una cuenta de resultado negativo",
+      "Una cuenta patrimonial de activo, saldo deudor, que representa el dinero que tenemos",
+      "Una cuenta que solo registra cheques de terceros"
+    ],
+    c:2,
+    j:"Caja es una cuenta patrimonial de activo, de saldo deudor, y su saldo representa el dinero (efectivo y cheques) que la empresa tiene."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Qué es 'Mercaderías' dentro del sistema de cuentas?",
+    o:[
+      "Patrimonial de activo, saldo deudor; representa las mercaderías que compramos y vendemos",
+      "Una cuenta de pasivo que representa deudas por compras",
+      "Una cuenta de resultado que agrupa las ganancias por ventas",
+      "El total de gastos generales del ejercicio"
+    ],
+    c:0,
+    j:"Mercaderías es patrimonial de activo, saldo deudor, y su saldo representa las mercaderías que se tienen."
+  },
+  {
+    tipo:"teoria",
+    q:"¿Qué es 'Proveedores' según el análisis de cuentas del pasivo?",
+    o:[
+      "Patrimonial de activo, saldo deudor",
+      "Una cuenta de ganancias por ventas",
+      "El dinero que tenemos depositado en el banco",
+      "Patrimonial de pasivo, saldo acreedor; representa la deuda que tenemos por la compra de mercaderías"
+    ],
+    c:3,
+    j:"Proveedores es patrimonial de pasivo, saldo acreedor, y representa las deudas que tenemos con quienes nos venden mercaderías."
+  },
+
+  // ---------- CASOS PRÁCTICOS con cuenta en T (10) ----------
+  {
+    tipo:"practica",
+    op:"Actividad N°1 — O.F.N°12, por mercaderías para revender $890, pago en efectivo.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:890,
+    cuentaA:"Mercaderías", cuentaB:"Caja",
+    o:[
+      {debe:"Mercaderías", haber:"Caja"},
+      {debe:"Caja", haber:"Mercaderías"},
+      {debe:"Mercaderías", haber:"Proveedores"},
+      {debe:"Gastos Generales", haber:"Caja"}
+    ],
+    c:0,
+    j:"Mercaderías se debita al comprar (según el apunte, se debita cuando compramos toda clase de mercaderías) y Caja se acredita porque el pago se hizo en efectivo."
+  },
+  {
+    tipo:"practica",
+    op:"Actividad N°1 — O.R.N°7, por servicios de agua $254, en efectivo.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:254,
+    cuentaA:"Gastos Generales", cuentaB:"Caja",
+    o:[
+      {debe:"Gastos Generales", haber:"Caja"},
+      {debe:"Caja", haber:"Gastos Generales"},
+      {debe:"Mercaderías", haber:"Caja"},
+      {debe:"Gastos Generales", haber:"Proveedores"}
+    ],
+    c:0,
+    j:"Gastos Generales es una cuenta de pérdida, saldo deudor, que se debita al producirse el gasto; Caja se acredita porque se pagó en efectivo."
+  },
+  {
+    tipo:"practica",
+    op:"Actividad N°1 — O.R.N°9, por alquileres $3100, pago a crédito a López.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:3100,
+    cuentaA:"Alquileres Pagados", cuentaB:"Acreedores Varios",
+    o:[
+      {debe:"Alquileres Pagados", haber:"Acreedores Varios"},
+      {debe:"Acreedores Varios", haber:"Alquileres Pagados"},
+      {debe:"Alquileres Pagados", haber:"Caja"},
+      {debe:"Alquileres Pagados", haber:"Proveedores"}
+    ],
+    c:0,
+    j:"Alquileres Pagados es una pérdida, saldo deudor, que se debita al pagar el alquiler. Como es a crédito (no se paga en el momento), se acredita Acreedores Varios por la deuda con López."
+  },
+  {
+    tipo:"practica",
+    op:"Actividad N°1 — D.F.N°3, por mercaderías $500, cobrando a crédito a Sosa.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:500,
+    cuentaA:"Deudores por Venta", cuentaB:"Ventas",
+    o:[
+      {debe:"Deudores por Venta", haber:"Ventas"},
+      {debe:"Ventas", haber:"Deudores por Venta"},
+      {debe:"Deudores por Venta", haber:"Mercaderías"},
+      {debe:"Caja", haber:"Ventas"}
+    ],
+    c:0,
+    j:"Al vender a crédito surge el derecho a cobrar, por eso se debita Deudores por Venta. La cuenta que se acredita es Ventas: es una cuenta de resultado (ganancia), saldo acreedor, que se acredita cuando vendemos mercaderías — no se acredita directamente la cuenta Mercaderías."
+  },
+  {
+    tipo:"practica",
+    op:"Actividad N°2 — D.R.N°3, por auto $24700, pago a crédito a Luis.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:24700,
+    cuentaA:"Rodados", cuentaB:"Acreedores Varios",
+    o:[
+      {debe:"Rodados", haber:"Acreedores Varios"},
+      {debe:"Acreedores Varios", haber:"Rodados"},
+      {debe:"Rodados", haber:"Documentos a Pagar"},
+      {debe:"Mercaderías", haber:"Acreedores Varios"}
+    ],
+    c:0,
+    j:"Rodados es una cuenta de Activo que se debita al incorporar el bien. Como la compra es a crédito (sin documento firmado), se acredita Acreedores Varios por la deuda con Luis."
+  },
+  {
+    tipo:"practica",
+    op:"Actividad N°2 — O.R.N°6, por impuestos $120, en efectivo.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:120,
+    cuentaA:"Impuestos Pagados", cuentaB:"Caja",
+    o:[
+      {debe:"Impuestos Pagados", haber:"Caja"},
+      {debe:"Caja", haber:"Impuestos Pagados"},
+      {debe:"Gastos Generales", haber:"Caja"},
+      {debe:"Impuestos Pagados", haber:"Proveedores"}
+    ],
+    c:0,
+    j:"Impuestos Pagados es una cuenta de pérdida, saldo deudor, que se debita al pagarlos; Caja se acredita porque el pago se realizó en efectivo."
+  },
+  {
+    tipo:"practica",
+    op:"Actividad N°3 — O.F.N°6, por computadoras $8550, pago con pagaré a 22 días a Sol.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:8550,
+    cuentaA:"Muebles y Útiles", cuentaB:"Documentos a Pagar",
+    o:[
+      {debe:"Muebles y Útiles", haber:"Documentos a Pagar"},
+      {debe:"Documentos a Pagar", haber:"Muebles y Útiles"},
+      {debe:"Muebles y Útiles", haber:"Proveedores"},
+      {debe:"Mercaderías", haber:"Documentos a Pagar"}
+    ],
+    c:0,
+    j:"Las computadoras se registran en Muebles y Útiles (activo), que se debita al incorporarlas. Como se paga con un pagaré, se acredita Documentos a Pagar por el compromiso firmado a favor de Sol."
+  },
+  {
+    tipo:"practica",
+    op:"Actividad N°3 — D.F.N°5, por mercaderías $1780, cobrando con cheque del Bco Nación.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:1780,
+    cuentaA:"Caja", cuentaB:"Ventas",
+    o:[
+      {debe:"Caja", haber:"Ventas"},
+      {debe:"Ventas", haber:"Caja"},
+      {debe:"Deudores por Venta", haber:"Ventas"},
+      {debe:"Caja", haber:"Mercaderías"}
+    ],
+    c:0,
+    j:"Caja se debita porque recibimos un cheque de terceros (el apunte incluye los cheques dentro de Caja). Ventas se acredita porque es la cuenta de resultado (ganancia) que se acredita al vender mercaderías, no Mercaderías directamente."
+  },
+  {
+    tipo:"practica",
+    op:"Actividad N°4 — D.R.N°4, por cobro al Sr. A (deudor inicial), en efectivo.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:876,
+    cuentaA:"Caja", cuentaB:"Deudores Varios",
+    o:[
+      {debe:"Caja", haber:"Deudores Varios"},
+      {debe:"Deudores Varios", haber:"Caja"},
+      {debe:"Caja", haber:"Deudores por Venta"},
+      {debe:"Caja", haber:"Proveedores"}
+    ],
+    c:0,
+    j:"Caja se debita porque cobramos en efectivo; Deudores Varios se acredita porque se cancela el derecho a cobrar que teníamos con el Sr. A desde el inicio de la actividad."
+  },
+  {
+    tipo:"practica",
+    op:"Actividad N°4 — D.R.N°7, por cobro total a Lujàn (quien nos debía por una venta de mercaderías), en efectivo.",
+    q:"¿Qué cuenta se debita y cuál se acredita en esta operación?",
+    monto:1600,
+    cuentaA:"Caja", cuentaB:"Deudores por Venta",
+    o:[
+      {debe:"Caja", haber:"Deudores por Venta"},
+      {debe:"Deudores por Venta", haber:"Caja"},
+      {debe:"Caja", haber:"Deudores Varios"},
+      {debe:"Caja", haber:"Acreedores Varios"}
+    ],
+    c:0,
+    j:"Caja se debita porque cobramos en efectivo; Deudores por Venta se acredita porque se cancela la deuda que Lujàn tenía con nosotros por la mercadería vendida a crédito."
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+
+function startQuiz(){
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('quiz').classList.remove('hidden');
+  current = 0;
+  score = 0;
+  renderQuestion();
+}
+
+function fmt(n){
+  return '$' + n.toLocaleString('es-AR');
+}
+
+function renderTAccounts(item){
+  const wrap = document.getElementById('t-wrap');
+  wrap.classList.remove('hidden');
+  wrap.innerHTML = `
+    <div class="t-account">
+      <div class="t-name">${item.cuentaA}</div>
+      <div class="t-sides">
+        <div class="t-debe">
+          <span class="t-side-label">Debe</span>
+          <span class="t-amount" id="ta-amount">${fmt(item.monto)}</span>
+        </div>
+        <div class="t-haber"><span class="t-side-label">Haber</span></div>
+      </div>
+    </div>
+    <div class="t-account">
+      <div class="t-name">${item.cuentaB}</div>
+      <div class="t-sides">
+        <div class="t-debe"><span class="t-side-label">Debe</span></div>
+        <div class="t-haber">
+          <span class="t-side-label">Haber</span>
+          <span class="t-amount" id="tb-amount">${fmt(item.monto)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderQuestion(){
+  answered = false;
+  const item = QUESTIONS[current];
+  document.getElementById('progress-text').textContent = `Ítem ${current+1} de ${QUESTIONS.length}`;
+  document.getElementById('score-text').textContent = `Aciertos: ${score}`;
+  document.getElementById('progress-fill').style.width = ((current)/QUESTIONS.length*100)+'%';
+
+  const tag = document.getElementById('q-tag');
+  tag.textContent = item.tipo === 'teoria' ? 'Teoría' : 'Caso práctico';
+  tag.className = 'tag ' + (item.tipo === 'teoria' ? 'teoria' : 'practica');
+
+  document.getElementById('q-text').textContent = item.q;
+
+  const opBox = document.getElementById('op-box');
+  const tWrap = document.getElementById('t-wrap');
+  if(item.tipo === 'practica'){
+    opBox.classList.remove('hidden');
+    opBox.innerHTML = '<b>Operación:</b> ' + item.op;
+    renderTAccounts(item);
+  } else {
+    opBox.classList.add('hidden');
+    tWrap.classList.add('hidden');
+    tWrap.innerHTML = '';
+  }
+
+  const optsWrap = document.getElementById('q-options');
+  optsWrap.innerHTML = '';
+  const letters = ['A','B','C','D'];
+
+  item.o.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    let label;
+    if(item.tipo === 'practica'){
+      label = `Se debita <b>${opt.debe}</b> y se acredita <b>${opt.haber}</b>`;
+    } else {
+      label = opt;
+    }
+    btn.innerHTML = `<span class="letter">${letters[idx]}</span><span>${label}</span>`;
+    btn.onclick = () => selectAnswer(idx, btn);
+    optsWrap.appendChild(btn);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('next-btn').style.display = 'none';
+}
+
+function selectAnswer(idx, btnEl){
+  if(answered) return;
+  answered = true;
+  const item = QUESTIONS[current];
+  const allOptions = document.querySelectorAll('#q-options .option');
+  allOptions.forEach(o => o.classList.add('locked'));
+
+  const isCorrect = idx === item.c;
+  if(isCorrect){
+    btnEl.classList.add('correct');
+    score++;
+  } else {
+    btnEl.classList.add('incorrect');
+    allOptions[item.c].classList.add('correct');
+  }
+  allOptions.forEach((o, i) => {
+    if(i !== idx && i !== item.c) o.classList.add('dim');
+  });
+
+  if(item.tipo === 'practica'){
+    const taAmt = document.getElementById('ta-amount');
+    const tbAmt = document.getElementById('tb-amount');
+    if(taAmt) taAmt.classList.add('show','correcta');
+    if(tbAmt) tbAmt.classList.add('show','correcta');
+  }
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback show ' + (isCorrect ? 'ok' : 'bad');
+  document.getElementById('fb-title').textContent = isCorrect ? '✔ Correcto' : '✘ Incorrecto';
+  document.getElementById('fb-text').textContent = item.j;
+
+  document.getElementById('score-text').textContent = `Aciertos: ${score}`;
+  document.getElementById('next-btn').style.display = 'block';
+  document.getElementById('progress-fill').style.width = ((current+1)/QUESTIONS.length*100)+'%';
+}
+
+function nextQuestion(){
+  current++;
+  if(current >= QUESTIONS.length){
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResult(){
+  document.getElementById('quiz').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  const total = QUESTIONS.length;
+  const incorrect = total - score;
+  document.getElementById('final-score').textContent = `${score}/${total}`;
+  document.getElementById('n-correct').textContent = score;
+  document.getElementById('n-incorrect').textContent = incorrect;
+
+  const pct = score/total;
+  let msg;
+  if(pct === 1){
+    msg = "Balance perfecto. Dominás el Debe, el Haber y toda la clasificación de cuentas sin margen de error.";
+  } else if(pct >= 0.8){
+    msg = "Muy buen saldo. Tenés sólida la teoría y los casos prácticos, repasá los detalles que fallaste.";
+  } else if(pct >= 0.6){
+    msg = "Saldo aprobado, pero con ajustes pendientes. Repasá bien la clasificación de cuentas y las actividades prácticas.";
+  } else if(pct >= 0.4){
+    msg = "Cuenta con diferencias importantes. Conviene volver sobre las definiciones de Debe, Haber y saldo antes de seguir.";
+  } else {
+    msg = "El libro no cierra todavía. Te conviene releer el apunte completo y volver a intentar la autoevaluación.";
+  }
+  document.getElementById('final-msg').textContent = msg;
+}
+
+function restartQuiz(){
+  startQuiz();
+}
+</script>
+</body>
+</html>
